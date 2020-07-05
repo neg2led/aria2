@@ -11,16 +11,19 @@
 # $ sudo docker cp $id:/aria2/src/aria2c.exe <dest>
 # $ sudo docker rm -v $id
 
-FROM ubuntu:19.04
+FROM ubuntu:18.04
 
 MAINTAINER Tatsuhiro Tsujikawa
 
 # Change HOST to x86_64-w64-mingw32 to build 64-bit binary
-ENV HOST i686-w64-mingw32
+#ENV HOST i686-w64-mingw32
+ENV HOST x86_64-w64-mingw32
 
-# It would be better to use nearest ubuntu archive mirror for faster
-# downloads.
-# RUN sed -ie 's/archive\.ubuntu/jp.archive.ubuntu/g' /etc/apt/sources.list
+# Arguments for ubuntu apt mirror URL & dependency versions
+ARG APTMIRROR="au"
+
+# Set ubuntu mirror source
+RUN sed -ie "s/archive\.ubuntu/${APTMIRROR}.archive.ubuntu/g" /etc/apt/sources.list
 
 RUN apt-get update && \
     apt-get install -y \
@@ -105,7 +108,10 @@ RUN tar xf libssh2-1.9.0.tar.gz && \
         --with-wincng \
         LIBS="-lws2_32" && \
     make install
-ADD https://api.github.com/repos/aria2/aria2/git/refs/heads/master version.json
-RUN git clone https://github.com/aria2/aria2 && \
-    cd aria2 && autoreconf -i && ./mingw-config && make && \
+ADD https://api.github.com/repos/neg2led/aria2/git/refs/heads/master version.json
+RUN git clone https://github.com/neg2led/aria2 && \
+    cd aria2 && \
+    autoreconf -i && \
+    ./mingw-config && \
+    make -j 4 && \
     $HOST-strip src/aria2c.exe
